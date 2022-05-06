@@ -1,8 +1,7 @@
-//Created a function to execute all functions we have
+
 function execall(){
-  //Getting sheet by sheet name
-  //getting all our required columns from the sheet
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("sheet9");
+  
   var Scenario = getcoldata("Scenario")
   var ID = getcoldata("ID")
   var callDate =	getcoldata("calldate")
@@ -22,15 +21,21 @@ function execall(){
   var parties = 	getcoldata("Number of parties in call (#)")
   var clarity = 	getcoldata("Call Clarity (Echo, Noise, Mix Up, Silence)") 
   var comments = getcoldata("Comments");
+  var sipcallerip = getcoldata("sipcallerip")
+  var sipcalledip = getcoldata("sipcalledip")
 
-  //getting all data
+  
+
   var data = sheet.getRange(2,1,1,199).getValues();
   var newdata = data[0];
+  var mrgrng = sheet.getRange(1,1,sheet.getMaxRows, sheet.getMaxColumns()).getMergedRanges();
+  console.log(mrgrng)
 
+  
+  
   //getting all column indexes
   var scenario_in = newdata.indexOf("Scenario");//this will print index of this number
   var id_in = newdata.indexOf("ID");
-
   var calldate_in = newdata.indexOf("calldate");
   var callEnd_in = newdata.indexOf("callend");
   var callDuration_in = newdata.indexOf("duration");
@@ -48,8 +53,9 @@ function execall(){
   var parties_in	=	newdata.indexOf("Number of parties in call (#)");
   var clarity_in = newdata.indexOf("Call Clarity (Echo, Noise, Mix Up, Silence)")
   var comments_in = newdata.indexOf("Comments")
-  
-  //o
+  var sipcallerip_in = newdata.indexOf("sipcallerip")
+  var sipcalledip_in = newdata.indexOf("sipcalledip")
+
   console.log("index of scenario is = "+scenario_in)
   //var id_inb = id_in+1;
   
@@ -61,7 +67,6 @@ function execall(){
   for(var i=3;i<lastr;i++){
 
     //getting values from all indexes
-    //adding plus 1 with indexes to retrive exact column
     var scenario2 = sheet.getRange(i,scenario_in+1).getValue();
     var id2 = sheet.getRange(i,id_in+1).getValue();
     var callDate2 = sheet.getRange(i,calldate_in+1).getValue();
@@ -81,12 +86,14 @@ function execall(){
     var	parties2	=	sheet.getRange(i,	parties_in+1).getValue()
     var	clarity2	=	sheet.getRange(i,	clarity_in+1).getValue()
     var comment2 = sheet.getRange(i,comments_in+1).getValue();
+
+    var	sipcallerip2	=	sheet.getRange(i,	sipcallerip_in+1).getValue()
+    var sipcalledip2 = sheet.getRange(i,sipcalledip_in+1).getValue();
     //console.log("scenario = "+scenario2)
 
     
     
 
-    //Applying  conditions on columns of our sheet.
     if (scenario2 == null){
       sheet.getRange(i,scenario_in+1).setBackground("#cdcdcd")
       //if scenario is hold unhold, check for hold column 
@@ -152,6 +159,12 @@ function execall(){
      if (callDuration2 >0 && connectDuration2 <=0  && sipResponseDesc2	!==  "200 OK"){
       sheet.getRange(i,connectDuration_in+1).setBackground("#27cc53")
     }
+    if(sipcallerip2 >0 && sipcalledip2>0 && sipcallerip2 === sipcalledip2 ){
+      console.log("sip caller ip and called ip must not same")
+      sheet.getRange(i,sipcallerip_in+1).setBackground("#d91646")
+      sheet.getRange(i,sipcalledip_in+1).setBackground("#d91646")
+      sheet.getRange(i,sipcallerip_in+1).setNote("Sip called and Caller IP must not same")
+    }
     else{
       //Logger.log("executed")
     }
@@ -160,9 +173,8 @@ function execall(){
 }
 
 
-//main function to get header column
 function getcoldata(header) {
-  
+
   const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("sheet9"); // Change this according to your preferences
   var header;
   //const header = "ID"; // Change this according to your pareferences
@@ -179,13 +191,46 @@ function getcoldata(header) {
 
 
 
+const sS = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("analysis-cpy"); 
+
+function conditionalColors() {
+
+  /* Filter the values to obtain true when the time changes */
+  var range = getcoldata("calldate")
+  const values = getcoldata("calldate")
+    /* Evaluate end-date `B2:B` */
+    //.getRange(range)
+    // .filter(n => n[0] !== '')
+    // .flat()
+    .map(n => new Date(n).getTime())
+     //
+    .map((n, idx, crrArr) => idx === 0 ? true : crrArr[idx-1] !== crrArr[idx])  
+    // 
+    // Math.abs(crrArr[idx-1] - crrArr[idx]) > 5000 )
+
+  /* defining the colors*/
+
+  var data = sS.getRange(2,1,1,199).getValues();
+  var newdata = data[0];
+  //getting  column indexes
+  var calldate_in = newdata.indexOf("calldate");
+  var callEnd_in = newdata.indexOf("callend");
+  console.log(calldate_in)
+  
+  console.log(getcoldata())
+  const color1 = [204, 222, 188]
+  const color2 = [238, 232, 170]
+  let color = color1
 
 
-
-
-
-
-
-
-
-
+  /* Loop to change the color every time we have a true */
+  values.forEach((c, idx) => {
+    if (c) {
+      color = color === color1 ? color2 : color1
+    }
+    // if call date index is 4 it will add 1 =5, which means calldate  starts from 5th column   
+    //provide a column range for calldate and call end
+    sS.getRange(idx + 3, calldate_in+1).setBackgroundRGB(...color)
+    sS.getRange(idx + 3, callEnd_in+1).setBackgroundRGB(...color)
+  })
+}
